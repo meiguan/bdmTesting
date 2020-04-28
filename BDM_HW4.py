@@ -1,6 +1,7 @@
 import sys
 from pyspark import SparkContext
 from heapq import nlargest
+import csv
 
 def createIndex(shapefile):
     '''
@@ -81,5 +82,5 @@ if __name__=='__main__':
         .reduceByKey(lambda x,y: x+y)\
         .sortByKey() \
         .map(tocsv) \
-        .saveAsTextFile(output)
+        .saveAsTextFile('output')
     
