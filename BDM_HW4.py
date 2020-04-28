@@ -64,11 +64,14 @@ def processTrips(pid, records):
             yield ((zones['borough'][b],zones['neighborhood'][n]), 1)
     return counts.items()
 
+def tocsv(data):
+    return ','.join(str(d) for d in data)
+
 if __name__=='__main__':
     fn = '/tmp/bdm/yellow_tripdata_2011-05.csv' if len(sys.argv)<2 else sys.argv[1]
     sc = SparkContext()
     rdd = sc.textFile(fn)
-    counts = rdd.mapPartitionsWithIndex(processTrips) \
+    rdd.mapPartitionsWithIndex(processTrips) \
         .reduceByKey(lambda x,y: x+y) \
         .sortBy(lambda x: -x[1]) \
         .map(lambda x: (x[0][0], x[0][1], x[1])) \
@@ -76,6 +79,7 @@ if __name__=='__main__':
         .flatMap(lambda g: nlargest(3, g[1], key=lambda x: x[2])) \
         .map(lambda x: (x[0], (x[1], x[2]))) \
         .reduceByKey(lambda x,y: x+y)\
-        .collect()
-    print(counts)
+        .sortByKey() \
+        .map(tocsv) \
+        .saveAsTextFile(output)
     
