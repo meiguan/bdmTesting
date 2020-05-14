@@ -17,9 +17,10 @@ def createStreetIndex(pid, rows):
         if (len(record)==32):
             # check for the numerics on the lower bound
             if re.search('^([0-9-]+)$', record[0]):
-                streetNumBegin = tuple(map(int, filter(None, record[0].split('-'))))
-                streetNumEnd = tuple(map(int, filter(None, record[1].split('-'))))
-                yield (record[2], (int(record[13]), record[28].lower().strip(),
+                streetNumBegin = tuple(map(int, filter(None, record[2].split('-')))) # L_LOW_HN
+                streetNumEnd = tuple(map(int, filter(None, record[3].split('-')))) #L_HIGH_HN
+                # PHYSICALID, BOROCODE, FULL_STREE, ST_NAME
+                yield (record[0], (int(record[13]), record[28].lower().strip(),
                                    record[29].lower().strip(), streetNumBegin, streetNumEnd))
                 next(itertools.islice(buffer, steps, steps), None)
         else:
