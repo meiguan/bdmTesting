@@ -72,9 +72,10 @@ def extractFull(pid, rows):
                 # determine if odd or even
                 if len(streetNum)==2:
                     oddEven = streetNum[1] % 2
-                else:
+                if len(streetNum)==1:
                     oddEven = streetNum[0] % 2
                 # get the streetid
+                if len(streetNum) > 0:
                 streetid = getStreetId(boroCode, oddEven, streetNum, violationStreetName, dictionary_bc.value)
                 if streetid is not None:
                     yield ((year, streetid), 1)
