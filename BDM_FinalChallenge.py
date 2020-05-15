@@ -142,6 +142,7 @@ if __name__=='__main__':
         .reduceByKey(lambda x, y: x+y)\
         .sortByKey()\
         .map(lambda x: (x[0][0], (x[0][1], x[1])))\
+        .reduceByKey(lambda x, y: x + y)\
         .mapValues(lambda x: getYearCounts(x))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
