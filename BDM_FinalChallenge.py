@@ -2,9 +2,15 @@ import re
 import csv
 import itertools
 import sys
+import numpy as np
 from pyspark import SparkContext
 
-def tocsv(data):
+# helper functions
+def tocsv(row):
+    streetid = row[0]
+    counts = ','.join(str(d) for d in row[1][0])
+    coef = row[1][1]
+    data = (streetid, counts, coef)
     return ','.join(str(d) for d in data)
 
 def getInt(data):
@@ -19,6 +25,7 @@ def getBoro(key):
     except:
         return None
 
+# create index from the street
 def createStreetIndex(pid, rows):
     if pid==0:
         next(rows)
@@ -46,7 +53,33 @@ def createStreetIndex(pid, rows):
         else:
             for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
                 yield (None, (((pid,no), line),))
-    
+
+# process the violation tickets initially
+def extractFull(pid, rows):
+    if pid==0:
+        next(rows)
+    buffer, lines = itertools.tee(rows)
+    reader = csv.reader(lines)
+    prevLine = 0
+    for record in reader:
+        steps = reader.line_num - prevLine
+        prevLine = reader.line_num
+        if (record[21] is not None and record[23] is not None and record[24] is not None and 
+            record[4] is not None and record[4] != ''):
+            # get only records with numbers or -
+            if re.search('^([0-9-]+)$', record[23]):
+                boroCode = getBoro(record[21])
+                streetNum = tuple(map(int, filter(None, record[23].split('-'))))
+                violationStreetName = record[24].lower().strip()
+                year = getInt(record[4][-4:])
+                if year > 2014 and year < 2020:
+                    yield ((boroCode, violationStreetName),(streetNum,year))
+                    next(itertools.islice(buffer, steps, steps), None)
+        else:
+            for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
+                yield (None, (((pid,no), line),))
+
+# compare the street numbers
 def compareStreet(row):
     if len(row[1][0][0]) == 1:
         if row[1][0][0][0] % 2 == 0: # even numbers
@@ -72,7 +105,8 @@ def compareStreet(row):
                 return False
     else:
         return False
-    
+
+# get the counts by year
 def getYearCounts(rawCounts):
     size = len(rawCounts)
     yearCounts = {2015:0, 2016:0, 2017:0, 2018:0, 2019:0}
@@ -95,31 +129,7 @@ def getYearCounts(rawCounts):
     yearCountsTuple = tuple(yearCounts.values())
     return(yearCountsTuple)
     
-def extractFull(pid, rows):
-    if pid==0:
-        next(rows)
-    buffer, lines = itertools.tee(rows)
-    reader = csv.reader(lines)
-    prevLine = 0
-    for record in reader:
-        steps = reader.line_num - prevLine
-        prevLine = reader.line_num
-        if (record[21] is not None and record[23] is not None and record[24] is not None and 
-            record[4] is not None and record[4] != ''):
-            # get only records with numbers or -
-            if re.search('^([0-9-]+)$', record[23]):
-                boroCode = getBoro(record[21])
-                streetNum = tuple(map(int, filter(None, record[23].split('-'))))
-                violationStreetName = record[24].lower().strip()
-                year = getInt(record[4][-4:])
-                if year > 2014 and year < 2020:
-                    yield ((boroCode, violationStreetName),(streetNum,year))
-                    next(itertools.islice(buffer, steps, steps), None)
-        else:
-            for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
-                yield (None, (((pid,no), line),))
-
-
+    
 if __name__=='__main__':
     fn = sys.argv[1]
     sc = SparkContext()
@@ -144,6 +154,7 @@ if __name__=='__main__':
         .map(lambda x: (x[0][0], (x[0][1], x[1])))\
         .reduceByKey(lambda x, y: x + y)\
         .mapValues(lambda x: getYearCounts(x))\
+        .mapValues(lambda x: getCoef(x))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
     
