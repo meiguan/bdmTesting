@@ -128,7 +128,24 @@ def getYearCounts(rawCounts):
             yearCounts[2019] = rawCounts[i]
     yearCountsTuple = tuple(yearCounts.values())
     return(yearCountsTuple)
-    
+
+# get coef by hand
+def getCoef(row):
+    """
+    function to calc b in y = a+bx
+    """
+    x = np.array([2015, 2016, 2017, 2018, 2019])
+    y = np.array(list(row))
+    n = 5
+    xs = sum(x)
+    ys = sum(y)
+    x2 = sum(x**2)
+    y2 = sum(y**2)
+    xy = sum(x*y)
+    b = ((n*xy) - (xs*ys))/((n*x2)-(xs)**2)
+    ans = (row, round(b,2))
+    return(ans)
+
     
 if __name__=='__main__':
     fn = sys.argv[1]
