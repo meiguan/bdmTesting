@@ -31,13 +31,13 @@ def createStreetIndex(pid, rows):
         #check length of line
         if (len(record)==32):
             # check for the numerics on the lower bound
-            if re.search('^([0-9-]+)$', record[0]):
-                streetId = record[2]
+            if re.search('^([0-9-]+)$', record[2]):
+                streetId = record[0]
                 borocode = int(record[13])
                 fullstreet = record[28].lower().strip()
                 stname = record[29].lower().strip()
-                streetNumBeginOdd = tuple(map(int, filter(None, record[0].split('-'))))
-                streetNumEndOdd = tuple(map(int, filter(None, record[1].split('-'))))
+                streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
+                streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
                 streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
                 streetNumEndEven = tuple(map(int, filter(None, record[5].split('-'))))
                 yield ((borocode, fullstreet), 
