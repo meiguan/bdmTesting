@@ -4,6 +4,21 @@ import itertools
 import sys
 from pyspark import SparkContext
 
+def tocsv(data):
+    return ','.join(str(d) for d in data)
+
+def getInt(data):
+    try:
+        return int(data)
+    except:
+        return 0
+
+def getBoro(key):
+    try:
+        return boro_bc.value[key]
+    except:
+        return None
+
 def createStreetIndex(pid, rows):
     if pid==0:
         next(rows)
@@ -31,12 +46,6 @@ def createStreetIndex(pid, rows):
         else:
             for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
                 yield (None, (((pid,no), line),))
-
-def getBoro(key):
-    try:
-        return boro_bc.value[key]
-    except:
-        return None
     
 def compareStreet(row):
     if len(row[1][0][0]) == 1:
@@ -79,15 +88,12 @@ def extractFull(pid, rows):
                 boroCode = getBoro(record[21])
                 streetNum = tuple(map(int, filter(None, record[23].split('-'))))
                 violationStreetName = record[24].lower().strip()
-                year = int(record[4][-4:])
+                year = getInt(record[4][-4:])
                 yield ((boroCode, violationStreetName),(streetNum,year))
                 next(itertools.islice(buffer, steps, steps), None)
         else:
             for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
                 yield (None, (((pid,no), line),))
-
-def tocsv(data):
-    return ','.join(str(d) for d in data)
 
 
 if __name__=='__main__':
