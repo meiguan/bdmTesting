@@ -73,6 +73,28 @@ def compareStreet(row):
     else:
         return False
     
+def getYearCounts(rawCounts):
+    size = len(rawCounts)
+    yearCounts = {2015:0, 2016:0, 2017:0, 2018:0, 2019:0}
+    for i in range(size):
+        if rawCounts[i] == 2015:
+            i +=1
+            yearCounts[2015] = rawCounts[i]
+        if rawCounts[i] == 2016:
+            i +=1
+            yearCounts[2016] = rawCounts[i]
+        if rawCounts[i] == 2017:
+            i+=1
+            yearCounts[2017] = rawCounts[i]
+        if rawCounts[i] == 2018:
+            i+=1
+            yearCounts[2018] = rawCounts[i]
+        if rawCounts[i] == 2019:
+            i+=1
+            yearCounts[2019] = rawCounts[i]
+    yearCountsTuple = tuple(yearCounts.values())
+    return(yearCountsTuple)
+    
 def extractFull(pid, rows):
     if pid==0:
         next(rows)
@@ -120,8 +142,7 @@ if __name__=='__main__':
         .reduceByKey(lambda x, y: x+y)\
         .sortByKey()\
         .map(lambda x: (x[0][0], (x[0][1], x[1])))\
-        .reduceByKey(lambda x, y: x+y)\
-        .map(lambda x: (x[0], x[1][1], x[1][3], x[1][5], x[1][7]))\
+        .mapValues(lambda x: getYearCounts(x))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
     
