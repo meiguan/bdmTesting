@@ -33,7 +33,7 @@ def createStreetIndex(pid, rows):
             # check for the numerics on the lower bound
             if re.search('^([0-9-]+)$', record[2]):
                 streetId = record[0]
-                borocode = int(record[13])
+                borocode = getInt(record[13])
                 fullstreet = record[28].lower().strip()
                 stname = record[29].lower().strip()
                 streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
@@ -82,7 +82,8 @@ def extractFull(pid, rows):
     for record in reader:
         steps = reader.line_num - prevLine
         prevLine = reader.line_num
-        if (record[21] is not None and record[23] is not None and record[24] is not None and record[4] is not None):
+        if (record[21] is not None and record[23] is not None and record[24] is not None and 
+            record[4] is not None and record[4] != ''):
             # get only records with numbers or -
             if re.search('^([0-9-]+)$', record[23]):
                 boroCode = getBoro(record[21])
@@ -119,6 +120,7 @@ if __name__=='__main__':
         .reduceByKey(lambda x, y: x+y)\
         .map(lambda x: (x[0][0], (x[0][1], x[1])))\
         .reduceByKey(lambda x, y: x+y)\
+        .map(lambda x: (x[0], x[1][1], x[1][3], x[1][5], x[1][7]))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
     
