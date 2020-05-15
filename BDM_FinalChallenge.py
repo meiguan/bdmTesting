@@ -6,11 +6,7 @@ import numpy as np
 from pyspark import SparkContext
 
 # helper functions
-def tocsv(row):
-    streetid = row[0]
-    counts = ','.join(str(d) for d in row[1][0])
-    coef = row[1][1]
-    data = (streetid, counts, coef)
+def tocsv(data):
     return ','.join(str(d) for d in data)
 
 def getInt(data):
