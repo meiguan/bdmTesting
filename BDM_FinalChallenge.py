@@ -118,6 +118,7 @@ if __name__=='__main__':
         .filter(lambda x: compareStreet(x))\
         .map(lambda x: ((x[1][1][1], x[1][0][1]), 1))\
         .reduceByKey(lambda x, y: x+y)\
+        .sortByKey()\
         .map(lambda x: (x[0][0], (x[0][1], x[1])))\
         .reduceByKey(lambda x, y: x+y)\
         .map(lambda x: (x[0], x[1][1], x[1][3], x[1][5], x[1][7]))\
