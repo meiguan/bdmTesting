@@ -90,8 +90,9 @@ def extractFull(pid, rows):
                 streetNum = tuple(map(int, filter(None, record[23].split('-'))))
                 violationStreetName = record[24].lower().strip()
                 year = getInt(record[4][-4:])
-                yield ((boroCode, violationStreetName),(streetNum,year))
-                next(itertools.islice(buffer, steps, steps), None)
+                if year > 2014 and year < 2020:
+                    yield ((boroCode, violationStreetName),(streetNum,year))
+                    next(itertools.islice(buffer, steps, steps), None)
         else:
             for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
                 yield (None, (((pid,no), line),))
@@ -113,7 +114,6 @@ if __name__=='__main__':
     
     sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
-        .filter(lambda x: x[1][1] > 2014 and  x[1][1] < 2020)\
         .join(dictionary)\
         .filter(lambda x: compareStreet(x))\
         .map(lambda x: ((x[1][1][1], x[1][0][1]), 1))\
