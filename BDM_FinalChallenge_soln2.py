@@ -183,11 +183,15 @@ if __name__=='__main__':
         .mapPartitionsWithIndex(createStreetIndex)\
         .mapValues(lambda x:( x[1], x[2], x[3], x[4], x[5]))
     
+    fullStreet_bc = sc.broadcast(fullStreet)
+    
     street = sc.textFile('tmp/bdm/nyc_cscl.csv')\
         .mapPartitionsWithIndex(createStreetIndex)\
         .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))\
+    
+    street_bc = sc.broadcast(street)
 
-    sc.union([street, fullStreet])\
+    sc.union([street_bc, fullStreet_bc])\
         .map(lambda x: ((x[0][0], x[0][1], x[1][0]), (x[1][1:])))\
         .distinct()\
         .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
