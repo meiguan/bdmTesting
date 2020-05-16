@@ -3,6 +3,7 @@ import csv
 import itertools
 import sys
 import numpy as np
+import datetime
 from pyspark import SparkContext
 
 # helper functions
@@ -19,7 +20,7 @@ def getBoro(key):
     try:
         return boro_bc.value[key]
     except:
-        return None
+        return 0
 
 # create index from the street
 def createStreetIndex(pid, rows):
@@ -157,6 +158,7 @@ def compareHouseNumbers(record):
     return(newRecord)
     
 if __name__=='__main__':
+    start = datetime.datetime.now()
     fn = sys.argv[1]
     sc = SparkContext()
     
@@ -167,9 +169,6 @@ if __name__=='__main__':
                   'R':5,'RICHMOND':5}
     boro_bc = sc.broadcast(boroDictionary)
     
-    dictionary = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
-        .mapPartitionsWithIndex(createStreetIndex)
-    
     parking = sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
         .reduceByKey(lambda x, y: x + y)\
@@ -179,11 +178,11 @@ if __name__=='__main__':
         .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
         .mapValues(lambda x : getYearCounts(x))
 
-    fullStreet = sc.textFile('nyc_cscl.csv')\
+    fullStreet = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
         .mapPartitionsWithIndex(createStreetIndex)\
         .mapValues(lambda x:( x[1], x[2], x[3], x[4], x[5]))
     
-    street = sc.textFile('nyc_cscl.csv')\
+    street = sc.textFile('tmp/bdm/nyc_cscl.csv')\
         .mapPartitionsWithIndex(createStreetIndex)\
         .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))\
         .union(fullStreet)\
@@ -201,3 +200,5 @@ if __name__=='__main__':
         .map(lambda x: tocsv(x))\
         .saveAsTextFile(sys.argv[2])
     
+    end = datetime.datetime.now()
+    print(end - start)

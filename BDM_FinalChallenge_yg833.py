@@ -3,6 +3,7 @@ import csv
 import itertools
 import sys
 import numpy as np
+import datetime as datetime
 from pyspark import SparkContext
 
 # helper functions
@@ -144,6 +145,7 @@ def getCoef(row):
 
     
 if __name__=='__main__':
+    start = datetime.datetime.now()
     fn = sys.argv[1]
     sc = SparkContext()
     
@@ -170,4 +172,6 @@ if __name__=='__main__':
         .mapValues(lambda x: getCoef(x))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
-    
+
+    end = datetime.datetime.now()
+    print(end - start)
