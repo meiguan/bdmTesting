@@ -170,6 +170,7 @@ if __name__=='__main__':
         .reduceByKey(lambda x, y: x + y)\
         .mapValues(lambda x: getYearCounts(x))\
         .mapValues(lambda x: getCoef(x))\
+        .map(lambda x: (x[0], x[1][0][0], x[1][0][1], x[1][0][2],x[1][0][3], x[1][0][4], x[1][1]))\
         .map(tocsv)\
         .saveAsTextFile(sys.argv[2])
 
