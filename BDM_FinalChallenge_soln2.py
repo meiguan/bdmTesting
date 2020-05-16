@@ -33,16 +33,17 @@ def createStreetIndex(pid, rows):
         steps = reader.line_num - prevLine
         prevLine = reader.line_num
         streetId = record[0]
-        borocode = int(record[13])
+        borocode = getInt(record[13])
         fullstreet = record[28].lower().strip()
         stname = record[29].lower().strip()
-        streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
-        streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
-        streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
-        streetNumEndEven = tuple(map(int, filter(None, record[5].split('-'))))
-        yield ((borocode, fullstreet),
-               (stname, streetId, 
-                streetNumBeginOdd, streetNumEndOdd, streetNumBeginEven, streetNumEndEven))
+        if (boroCode != 0 and fullStreet is not None and stname is not None):
+            streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
+            streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
+            streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
+            streetNumEndEven = tuple(map(int, filter(None, record[5].split('-'))))
+            yield ((borocode, fullstreet),
+                   (stname, streetId, 
+                    streetNumBeginOdd, streetNumEndOdd, streetNumBeginEven, streetNumEndEven))
 
 # process the violation tickets initially
 def extractFull(pid, rows):
