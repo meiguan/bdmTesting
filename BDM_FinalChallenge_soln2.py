@@ -185,12 +185,12 @@ if __name__=='__main__':
     street = sc.textFile('tmp/bdm/nyc_cscl.csv')\
         .mapPartitionsWithIndex(createStreetIndex)\
         .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))\
-        .union(fullStreet)\
+
+    sc.union([street, fullStreet])\
         .map(lambda x: ((x[0][0], x[0][1], x[1][0]), (x[1][1:])))\
         .distinct()\
-        .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))
-    
-    street.leftOuterJoin(parking)\
+        .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
+        .leftOuterJoin(parking)\
         .mapValues(lambda x: fillBlanks(x))\
         .mapValues(lambda x: compareHouseNumbers(x))\
         .map(lambda x: ((x[1][0]), (x[1][1])))\
