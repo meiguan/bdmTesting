@@ -62,7 +62,7 @@ def extractFull(pid, rows):
                 streetNum = tuple(map(int, filter(None, record[23].split('-'))))
                 violationStreetName = record[24].lower().strip()
                 year = getInt(record[4][-4:])
-                if year > 2014 and year < 2020 and boroCode > 0 and violationStreetName != '':
+                if year > 2014 and year < 2020 and boroCode > 0:
                     yield ((year, boroCode, violationStreetName,streetNum), 1)
                     next(itertools.islice(buffer, steps, steps), None)
         else:
