@@ -36,7 +36,7 @@ def createStreetIndex(pid, rows):
         borocode = getInt(record[13])
         fullstreet = record[28].lower().strip()
         stname = record[29].lower().strip()
-        if (boroCode != 0 and fullStreet is not None and stname is not None):
+        if (borocode != 0):
             streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
             streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
             streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
