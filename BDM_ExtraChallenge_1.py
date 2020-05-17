@@ -82,17 +82,19 @@ def extractFull(pid, records):
 if __name__=='__main__':
     start = datetime.datetime.now()
     fn = sys.argv[1]
+    words1 = sys.argv[2]
+    words2 = sys.argv[3]
     sc = SparkContext()
     
-    drugwords1 = [line.strip() for line in open('/tmp/bdm/drug_illegal.txt')]
-    drugwords2 = [line.strip() for line in open('/tmp/bdm/drug_sched2.txt')]
+    drugwords1 = [line.strip() for line in open(words1)]
+    drugwords2 = [line.strip() for line in open(words2)]
     drugwords = [drugwords1, drugwords2]
     drugwords_bc = sc.broadcast(set().union(*drugwords))
 
     sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
         .map(tocsv)\
-        .saveAsTextFile(sys.argv[2])
+        .saveAsTextFile(sys.argv[4])
 
     end = datetime.datetime.now()
     print(end - start)
