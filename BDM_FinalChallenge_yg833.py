@@ -3,7 +3,7 @@ import csv
 import itertools
 import sys
 import numpy as np
-import datetime as datetime
+import datetime
 from pyspark import SparkContext
 
 # helper functions
@@ -15,12 +15,12 @@ def getInt(data):
         return int(data)
     except:
         return 0
-
+    
 def getBoro(key):
     try:
         return boro_bc.value[key]
     except:
-        return None
+        return 0
 
 # create index from the street
 def createStreetIndex(pid, rows):
@@ -32,24 +32,18 @@ def createStreetIndex(pid, rows):
     for record in reader:
         steps = reader.line_num - prevLine
         prevLine = reader.line_num
-        #check length of line
-        if (len(record)==32):
-            # check for the numerics on the lower bound
-            if re.search('^([0-9-]+)$', record[2]):
-                streetId = record[0]
-                borocode = getInt(record[13])
-                fullstreet = record[28].lower().strip()
-                stname = record[29].lower().strip()
-                streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
-                streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
-                streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
-                streetNumEndEven = tuple(map(int, filter(None, record[5].split('-'))))
-                yield ((borocode, fullstreet), 
-                       ((streetNumBeginOdd, streetNumEndOdd, streetNumBeginEven, streetNumEndEven),(streetId)))
-                next(itertools.islice(buffer, steps, steps), None)
-        else:
-            for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
-                yield (None, (((pid,no), line),))
+        streetId = record[0]
+        borocode = getInt(record[13])
+        fullstreet = record[28].lower().strip()
+        stname = record[29].lower().strip()
+        if (borocode != 0):
+            streetNumBeginOdd = tuple(map(int, filter(None, record[2].split('-'))))
+            streetNumEndOdd = tuple(map(int, filter(None, record[3].split('-'))))
+            streetNumBeginEven = tuple(map(int, filter(None, record[4].split('-'))))
+            streetNumEndEven = tuple(map(int, filter(None, record[5].split('-'))))
+            yield ((borocode, fullstreet),
+                   (stname, streetId, 
+                    streetNumBeginOdd, streetNumEndOdd, streetNumBeginEven, streetNumEndEven))
 
 # process the violation tickets initially
 def extractFull(pid, rows):
@@ -61,50 +55,22 @@ def extractFull(pid, rows):
     for record in reader:
         steps = reader.line_num - prevLine
         prevLine = reader.line_num
-        if (record[21] is not None and record[23] is not None and record[24] is not None and 
-            record[4] is not None and record[4] != ''):
+        if (record[21] is not None and record[23] is not None and record[24] is not None and record[4] is not None):
             # get only records with numbers or -
             if re.search('^([0-9-]+)$', record[23]):
                 boroCode = getBoro(record[21])
                 streetNum = tuple(map(int, filter(None, record[23].split('-'))))
                 violationStreetName = record[24].lower().strip()
                 year = getInt(record[4][-4:])
-                if year > 2014 and year < 2020:
-                    yield ((boroCode, violationStreetName),(streetNum,year))
+                if year > 2014 and year < 2020 and boroCode > 0:
+                    yield ((year, boroCode, violationStreetName,streetNum), 1)
                     next(itertools.islice(buffer, steps, steps), None)
         else:
             for no, line in enumerate(itertools.islice(buffer, steps), prevLine):
                 yield (None, (((pid,no), line),))
 
-# compare the street numbers
-def compareStreet(row):
-    if len(row[1][0][0]) == 1:
-        if row[1][0][0][0] % 2 == 0: # even numbers
-            if row[1][0][0] >= row[1][1][0][2] and row[1][0][0] <= row[1][1][0][3]:
-                return True
-            else:
-                return False
-        if row[1][0][0][0] % 2 == 1: # odd numbers
-            if row[1][0][0] >= row[1][1][0][0] and row[1][0][0] <= row[1][1][0][1]:
-                return True
-            else:
-                return False
-    if len(row[1][0][0]) == 2:
-        if row[1][0][0][1] % 2 == 0: # even numbers
-            if row[1][0][0] >= row[1][1][0][2] and row[1][0][0] <= row[1][1][0][3]:
-                return True
-            else:
-                return False
-        if row[1][0][0][1] % 2 == 1: # odd numbers
-            if row[1][0][0] >= row[1][1][0][0] and row[1][0][0] <= row[1][1][0][1]:
-                return True
-            else:
-                return False
-    else:
-        return False
-
-# get the counts by year
-def getYearCounts(rawCounts):
+def getYearCounts(record):
+    rawCounts = record[1]
     size = len(rawCounts)
     yearCounts = {2015:0, 2016:0, 2017:0, 2018:0, 2019:0}
     for i in range(size):
@@ -124,14 +90,25 @@ def getYearCounts(rawCounts):
             i+=1
             yearCounts[2019] = rawCounts[i]
     yearCountsTuple = tuple(yearCounts.values())
-    return(yearCountsTuple)
+    return((record[0], yearCountsTuple))
+
+def fillBlanks(record):
+    try:
+        streetInfo = record[0]
+        violations = record[1]
+        if violations is None:
+            violations = ((), (0, 0, 0, 0, 0))
+        newRecords = (streetInfo, violations)
+    except:
+        newRecords = record
+    return newRecords
 
 # get coef by hand
 def getCoef(row):
     """
     function to calc b in y = a+bx
     """
-    x = np.array([2015, 2016, 2017, 2018, 2019])
+    x = np.array([0, 1, 2, 3, 4]) # years to correspond to 2015 - 2019
     y = np.array(list(row))
     n = 5
     xs = sum(x)
@@ -140,9 +117,50 @@ def getCoef(row):
     y2 = sum(y**2)
     xy = sum(x*y)
     b = ((n*xy) - (xs*ys))/((n*x2)-(xs)**2)
-    ans = (row, round(b,2))
+    ans = (row[0], row[1], row[2], row[3], row[4], round(b,2))
     return(ans)
 
+def compareHouseNumbers(record):
+    #break up record parts
+    streetId = record[0][0]
+    yearCounts = record[1][1]
+    violationHouseNum = record[1][0]
+    oddBegin = record[0][1][0]
+    oddEnd = record[0][1][1]
+    evenBegin =record[0][1][2]
+    evenEnd = record[0][1][3]
+    try:
+        # check records
+        if not violationHouseNum:
+            newRecord = (streetId, yearCounts)
+        else:
+            lenViolation = len(violationHouseNum)
+            if lenViolation == 2:
+                if violationHouseNum[1] % 2 == 1:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+                if violationHouseNum[1] % 2 == 0:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+            if lenViolation == 1:
+                if violationHouseNum[0] % 2 == 1:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+                if violationHouseNum[0] % 2 == 0:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+        return(newRecord)
+    except:
+        newRecord = (streetId, (0, 0, 0, 0, 0))
+        return(newRecord)
     
 if __name__=='__main__':
     start = datetime.datetime.now()
@@ -156,23 +174,36 @@ if __name__=='__main__':
                   'R':5,'RICHMOND':5}
     boro_bc = sc.broadcast(boroDictionary)
     
-    dictionary = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
-        .mapPartitionsWithIndex(createStreetIndex)
-    
-    sc.textFile(fn)\
+    parking = sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
-        .join(dictionary)\
-        .filter(lambda x: compareStreet(x))\
-        .map(lambda x: ((x[1][1][1], x[1][0][1]), 1))\
-        .reduceByKey(lambda x, y: x+y)\
-        .sortByKey()\
-        .map(lambda x: (x[0][0], (x[0][1], x[1])))\
         .reduceByKey(lambda x, y: x + y)\
-        .mapValues(lambda x: getYearCounts(x))\
-        .mapValues(lambda x: getCoef(x))\
-        .map(lambda x: (x[0], x[1][0][0], x[1][0][1], x[1][0][2],x[1][0][3], x[1][0][4], x[1][1]))\
-        .map(tocsv)\
-        .saveAsTextFile(sys.argv[2])
+        .sortByKey()\
+        .map(lambda x: ((x[0][1], x[0][2], x[0][3]), (x[0][0], x[1])))\
+        .reduceByKey(lambda x, y: x + y)\
+        .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
+        .mapValues(lambda x : getYearCounts(x))
 
+    fullStreet = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
+        .mapPartitionsWithIndex(createStreetIndex)\
+        .mapValues(lambda x:( x[1], x[2], x[3], x[4], x[5]))
+    
+    street = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
+        .mapPartitionsWithIndex(createStreetIndex)\
+        .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))
+
+    (street+fullStreet)\
+        .map(lambda x: ((x[0][0], x[0][1], x[1][0]), (x[1][1:])))\
+        .distinct()\
+        .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
+        .leftOuterJoin(parking)\
+        .mapValues(lambda x: fillBlanks(x))\
+        .mapValues(lambda x: compareHouseNumbers(x))\
+        .map(lambda x: ((x[1][0]), (x[1][1])))\
+        .reduceByKey(lambda x, y: (x[0]+y[0], x[1]+y[1], x[2]+y[2], x[3]+y[3], x[4]+y[4]))\
+        .mapValues(lambda x: getCoef(x))\
+        .map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5]))\
+        .map(lambda x: tocsv(x))\
+        .saveAsTextFile(sys.argv[2])
+    
     end = datetime.datetime.now()
     print(end - start)
