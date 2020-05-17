@@ -183,7 +183,7 @@ if __name__=='__main__':
         .mapPartitionsWithIndex(createStreetIndex)\
         .mapValues(lambda x:( x[1], x[2], x[3], x[4], x[5]))
     
-    street = sc.textFile('tmp/bdm/nyc_cscl.csv')\
+    street = sc.textFile('/tmp/bdm/nyc_cscl.csv')\
         .mapPartitionsWithIndex(createStreetIndex)\
         .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))
 
