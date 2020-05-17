@@ -45,7 +45,7 @@ def extractFull(pid, records):
     import pyproj
     import shapely.geometry as geom
     proj = pyproj.Proj(init="epsg:5570", preserve_units=True)
-    index, zones = createIndex("500cities_tracts.geojson")
+    index, zones = createIndex("/tmp/bdm/500cities_tracts.geojson")
     pattern = re.compile('^[a-zA-Z]+')
     drugwords = {word for word in drugwords_bc.value if " " not in word} # individual words
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
