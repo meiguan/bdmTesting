@@ -137,23 +137,23 @@ def compareHouseNumbers(record):
             lenViolation = len(violationHouseNum)
             if lenViolation == 2:
                 if violationHouseNum[1] % 2 == 1:
-                    if violationHouseNum >= oddBegin and violationHouseNum =< oddEnd:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
                         newRecord = (streetId, yearCounts)
                     else:
                         newRecord = (streetId, (0, 0, 0, 0, 0))
                 if violationHouseNum[1] % 2 == 0:
-                    if violationHouseNum >= evenBegin and violationHouseNum =< evenEnd:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
                         newRecord = (streetId, yearCounts)
                     else:
                         newRecord = (streetId, (0, 0, 0, 0, 0))
             if lenViolation == 1:
                 if violationHouseNum[0] % 2 == 1:
-                    if violationHouseNum >= oddBegin and violationHouseNum =< oddEnd:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
                         newRecord = (streetId, yearCounts)
                     else:
                         newRecord = (streetId, (0, 0, 0, 0, 0))
                 if violationHouseNum[0] % 2 == 0:
-                    if violationHouseNum >= evenBegin and violationHouseNum =< evenEnd:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
                         newRecord = (streetId, yearCounts)
                     else:
                         newRecord = (streetId, (0, 0, 0, 0, 0))
