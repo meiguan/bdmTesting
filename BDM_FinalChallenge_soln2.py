@@ -129,34 +129,38 @@ def compareHouseNumbers(record):
     oddEnd = record[0][1][1]
     evenBegin =record[0][1][2]
     evenEnd = record[0][1][3]
-    # check records
-    if not violationHouseNum:
-        newRecord = (streetId, yearCounts)
-    else:
-        lenViolation = len(violationHouseNum)
-        if lenViolation == 2:
-            if violationHouseNum[1] % 2 == 1:
-                if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
-                    newRecord = (streetId, yearCounts)
-                else:
-                    newRecord = (streetId, (0, 0, 0, 0, 0))
-            if violationHouseNum[1] % 2 == 0:
-                if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
-                    newRecord = (streetId, yearCounts)
-                else:
-                    newRecord = (streetId, (0, 0, 0, 0, 0))
-        if lenViolation == 1:
-            if violationHouseNum[0] % 2 == 1:
-                if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
-                    newRecord = (streetId, yearCounts)
-                else:
-                    newRecord = (streetId, (0, 0, 0, 0, 0))
-            if violationHouseNum[0] % 2 == 0:
-                if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
-                    newRecord = (streetId, yearCounts)
-                else:
-                    newRecord = (streetId, (0, 0, 0, 0, 0))
-    return(newRecord)
+    try:
+        # check records
+        if not violationHouseNum:
+            newRecord = (streetId, yearCounts)
+        else:
+            lenViolation = len(violationHouseNum)
+            if lenViolation == 2:
+                if violationHouseNum[1] % 2 == 1:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+                if violationHouseNum[1] % 2 == 0:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+            if lenViolation == 1:
+                if violationHouseNum[0] % 2 == 1:
+                    if violationHouseNum >= oddBegin and violationHouseNum <= oddEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+                if violationHouseNum[0] % 2 == 0:
+                    if violationHouseNum >= evenBegin and violationHouseNum <= evenEnd:
+                        newRecord = (streetId, yearCounts)
+                    else:
+                        newRecord = (streetId, (0, 0, 0, 0, 0))
+        return(newRecord)
+    except:
+        newRecord = (streetId, (0, 0, 0, 0, 0))
+        return(newRecord)
     
 if __name__=='__main__':
     start = datetime.datetime.now()
@@ -187,7 +191,7 @@ if __name__=='__main__':
         .mapPartitionsWithIndex(createStreetIndex)\
         .map(lambda x: ((x[0][0], x[1][0]), x[1][1:]))
 
-    sc.union([street, fullStreet])\
+    (street+fullStreet)\
         .map(lambda x: ((x[0][0], x[0][1], x[1][0]), (x[1][1:])))\
         .distinct()\
         .map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1])))\
