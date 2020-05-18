@@ -52,23 +52,24 @@ def extractFull(pid, records):
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
     counts = {}
     for record in records:
-        detectdrug = 0
+        flag = 0
         row = record.strip().split("|")
-        tweetwords = set(row[6].split(" "))
-        tweet = row[5].lower()
+        tweetwords = set(row[-1].split(" "))
+        tweet = row[-2].lower()
         if len(tweetwords & drugwords) > 0: # does any of the individual words in the 
-            detectdrug = 1
+            flag = 1
         else:  
             words = pattern.findall(tweet)
             length = len(words)
+            # adapted from https://www.geeksforgeeks.org/sentence-that-contains-all-the-given-phrases/
             if length > 1:
                 phrases = set()
                 for i in range(2, min(9, length + 1)): # make the set of phrases
                     for j in range(len(words) - i + 1):
                         phrases.add(" ".join(words[j:j + i]))
                 if len(phrases & drugphrases) > 0: # does the phrase exist
-                    detectdrug = 1
-        if detectdrug == 1:
+                    flag = 1
+        if flag == 1:
             tweetpoint = geom.Point(proj(float(row[2]), float(row[1])))
             try:
                 ctidx = findZone(tweetpoint, index, zones)
@@ -77,7 +78,6 @@ def extractFull(pid, records):
             except:
                 continue
             yield ((censustract, censustractpop), 1)
-
 
     
 if __name__=='__main__':
