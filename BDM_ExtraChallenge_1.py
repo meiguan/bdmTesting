@@ -77,7 +77,7 @@ def extractFull(pid, records):
                 censustractpop = zones.plctrpop10[ctidx]
             except:
                 continue
-            yield ((censustract, censustractpop), 1)
+            yield (censustract, 1/censustractpop)
 
     
 if __name__=='__main__':
