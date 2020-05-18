@@ -71,7 +71,9 @@ def extractFull(pid, records):
         if flag == 1:
             tweetpoint = geom.Point(proj(float(row[2]), float(row[1])))
             try:
-                censustract, censustractpop = findZone(tweetpoint, index, zones) 
+                ctidx = findZone(tweetpoint, index, zones)
+                censustract = zones.plctract10[ctidx]
+                censustractpop = zones.plctrpop10[ctidx]
             except:
                 continue
             if censustract and censustractpop > 0:
