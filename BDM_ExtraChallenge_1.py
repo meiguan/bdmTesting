@@ -46,7 +46,7 @@ def extractFull(pid, records):
     import pyproj
     import shapely.geometry as geom
     proj = pyproj.Proj(init="epsg:2263", preserve_units=True)
-    index, zones = createIndex("/tmp/bdm/500cities_tracts.geojson")
+    index, zones = createIndex("500cities_tracts.geojson")
     pattern = re.compile('^[a-zA-Z]+')
     drugwords = {word for word in drugwords_bc.value if " " not in word} # individual words
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
@@ -61,6 +61,7 @@ def extractFull(pid, records):
         else:  
             words = pattern.findall(tweet)
             length = len(words)
+            # adapted from https://www.geeksforgeeks.org/sentence-that-contains-all-the-given-phrases/
             if length > 1:
                 phrases = set()
                 for i in range(2, min(9, length + 1)): # make the set of phrases
@@ -76,7 +77,7 @@ def extractFull(pid, records):
                 censustractpop = zones.plctrpop10[ctidx]
             except:
                 continue
-    yield ((censustract, censustractpop), 1)
+            yield ((censustract, censustractpop), 1)
 
     
 if __name__=='__main__':
