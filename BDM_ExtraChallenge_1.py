@@ -44,8 +44,8 @@ def findZone(p, index, zones):
 def extractFull(pid, records):
     import pyproj
     import shapely.geometry as geom
-    proj = pyproj.Proj(init="epsg:5570", preserve_units=True)
-    index, zones = createIndex("/tmp/bdm/500cities_tracts.geojson")
+    proj = pyproj.Proj(init="epsg:2263", preserve_units=True)
+    index, zones = createIndex("500cities_tracts.geojson")
     pattern = re.compile('^[a-zA-Z]+')
     drugwords = {word for word in drugwords_bc.value if " " not in word} # individual words
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
@@ -66,7 +66,7 @@ def extractFull(pid, records):
                 for i in range(2, min(9, length + 1)): # make the set of phrases
                     for j in range(len(words) - i + 1):
                         phrases.add(" ".join(words[j:j + i]))
-                if len(phrases & drug_pha) > 0: # does the phrase exist
+                if len(phrases & drugphrases) > 0: # does the phrase exist
                     flag = 1
         if flag == 1:
             p = geom.Point(proj(float(row[2]), float(row[1])))
@@ -82,19 +82,16 @@ def extractFull(pid, records):
 if __name__=='__main__':
     start = datetime.datetime.now()
     fn = sys.argv[1]
-    words1 = sys.argv[2]
-    words2 = sys.argv[3]
     sc = SparkContext()
     
-    drugwords1 = [line.strip() for line in open(words1)]
-    drugwords2 = [line.strip() for line in open(words2)]
+    drugwords1 = sc.textFile('/tmp/bdm/drug_illegal.txt').collect()
+    drugwords2 = sc.textFile('/tmp/bdm/drug_sched2.txt').collect()
     drugwords = [drugwords1, drugwords2]
     drugwords_bc = sc.broadcast(set().union(*drugwords))
 
     sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
-        .map(tocsv)\
-        .saveAsTextFile(sys.argv[4])
+        .saveAsTextFile(sys.argv[2])
 
     end = datetime.datetime.now()
     print(end - start)
