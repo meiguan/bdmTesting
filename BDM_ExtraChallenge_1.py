@@ -42,6 +42,7 @@ def findZone(p, index, zones):
     return None
 
 def extractFull(pid, records):
+    import re
     import pyproj
     import shapely.geometry as geom
     proj = pyproj.Proj(init="epsg:2263", preserve_units=True)
@@ -49,7 +50,6 @@ def extractFull(pid, records):
     pattern = re.compile('^[a-zA-Z]+')
     drugwords = {word for word in drugwords_bc.value if " " not in word} # individual words
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
-    
     counts = {}
     for record in records:
         flag = 0
@@ -69,13 +69,13 @@ def extractFull(pid, records):
                 if len(phrases & drugphrases) > 0: # does the phrase exist
                     flag = 1
         if flag == 1:
-            p = geom.Point(proj(float(row[2]), float(row[1])))
+            tweetpoint = geom.Point(proj(float(row[2]), float(row[1])))
             try:
-                zone_id, zone_pop = findZone(p, index, zones)
+                censustract, censustractpop = findZone(tweetpoint, index, zones) 
             except:
                 continue
-            if zone_id and zone_pop > 0:
-                counts[zone_id] = counts.get(zone_id, 0.0) + 1.0 / zone_pop
+            if censustract and censustractpop > 0:
+                counts[censustract] = counts.get(censustractpop, 0.0) + 1.0 / censustractpop
     return counts.items()
 
     
