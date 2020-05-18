@@ -52,12 +52,12 @@ def extractFull(pid, records):
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
     counts = {}
     for record in records:
-        flag = 0
+        detectdrug = 0
         row = record.strip().split("|")
         tweetwords = set(row[-1].split(" "))
         tweet = row[-2].lower()
         if len(tweetwords & drugwords) > 0: # does any of the individual words in the 
-            flag = 1
+            detectdrug = 1
         else:  
             words = pattern.findall(tweet)
             length = len(words)
@@ -68,8 +68,8 @@ def extractFull(pid, records):
                     for j in range(len(words) - i + 1):
                         phrases.add(" ".join(words[j:j + i]))
                 if len(phrases & drugphrases) > 0: # does the phrase exist
-                    flag = 1
-        if flag == 1:
+                    detectdrug = 1
+        if detectdrug == 1:
             tweetpoint = geom.Point(proj(float(row[2]), float(row[1])))
             try:
                 ctidx = findZone(tweetpoint, index, zones)
