@@ -46,7 +46,7 @@ def extractFull(pid, records):
     import pyproj
     import shapely.geometry as geom
     proj = pyproj.Proj(init="epsg:2263", preserve_units=True)
-    index, zones = createIndex("500cities_tracts.geojson")
+    index, zones = createIndex("/tmp/bdm/500cities_tracts.geojson")
     pattern = re.compile('^[a-zA-Z]+')
     drugwords = {word for word in drugwords_bc.value if " " not in word} # individual words
     drugphrases = {phrase for phrase in drugwords_bc.value if " " in phrase} # individual phrases
@@ -76,9 +76,7 @@ def extractFull(pid, records):
                 censustractpop = zones.plctrpop10[ctidx]
             except:
                 continue
-            if censustract and censustractpop > 0:
-                counts[censustract] = counts.get(censustractpop, 0.0) + 1.0 / censustractpop
-    return counts.items()
+    yield ((censustract, censustractpop), 1)
 
     
 if __name__=='__main__':
@@ -93,6 +91,9 @@ if __name__=='__main__':
 
     sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
+        .reduceByKey(lambda x, y: x + y)\
+        .map(lambda x: ((x[0][0]), x[1]/x[0][1]))\
+        .map(lambda x: tocsv(x))\
         .saveAsTextFile(sys.argv[2])
 
     end = datetime.datetime.now()
