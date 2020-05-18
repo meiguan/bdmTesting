@@ -92,6 +92,7 @@ if __name__=='__main__':
     sc.textFile(fn)\
         .mapPartitionsWithIndex(extractFull)\
         .reduceByKey(lambda x, y: x + y)\
+        .sortByKey()\
         .map(lambda x: ((x[0][0]), x[1]/x[0][1]))\
         .map(lambda x: tocsv(x))\
         .saveAsTextFile(sys.argv[2])
